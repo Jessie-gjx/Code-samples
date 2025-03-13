@@ -1,0 +1,120 @@
+#https://www.luogu.com.cn/problem/P4357
+
+#include<bits/stdc++.h>
+#define MAXN 100005
+using namespace std;
+int n,k,nowx,nowy;
+priority_queue <long long> q; 
+int mnx[MAXN],mxx[MAXN],mxy[MAXN],mny[MAXN];
+struct node
+{
+	int x,y;
+};
+node t[MAXN];
+struct ed
+{
+	int l,r;
+};
+ed tree[MAXN];
+int cmp1(node u,node v){
+	return u.y<v.y;	
+}
+int cmp2(node u,node v){
+	return u.x<v.x;	
+}
+long long sqr(int tt)
+{
+	return (long long)tt*tt;
+}
+long long accur(int x,int y,int point)
+{
+	long long dis=sqr(abs(x-t[point].x))+sqr(abs(y-t[point].y));
+	return dis;
+}
+long long circu(int now,int x,int y)
+{
+	long long dis=sqr(max(abs(x-mnx[now]),abs(x-mxx[now])))+sqr(max(abs(y-mny[now]),abs(y-mxy[now])));
+	return dis;
+}
+
+void update(int now)
+{
+	int ll=tree[now].l;
+	int rr=tree[now].r;
+	if(ll)
+	{
+		mxx[now]=max(mxx[ll],mxx[now]);
+		mnx[now]=min(mnx[ll],mnx[now]);
+		mxy[now]=max(mxy[ll],mxy[now]);
+		mny[now]=min(mny[ll],mny[now]);
+	}
+	if(rr)
+	{
+		mxx[now]=max(mxx[rr],mxx[now]);
+		mnx[now]=min(mnx[rr],mnx[now]);
+		mxy[now]=max(mxy[rr],mxy[now]);
+		mny[now]=min(mny[rr],mny[now]);
+	}
+}
+int build(int L,int R,int flag)//flag==1按照y排序 
+{
+
+	int mid=(L+R)>>1;
+	if(flag)nth_element(t+L+1,t+mid+1,t+1+R,cmp1);
+	else  nth_element(t+L+1,t+mid+1,t+1+R,cmp2);
+	mxx[mid]=mnx[mid]=t[mid].x;
+	mxy[mid]=mny[mid]=t[mid].y;
+	
+	if(L!=mid)tree[mid].l=build(L,mid-1,!flag);
+	if(mid!=R)tree[mid].r=build(mid+1,R,!flag);
+	update(mid);
+//	cout<<" "<<t[mid].x<<endl;
+	return mid;
+}
+void ask(int point)
+{
+	if(!point)return;
+	//cout<<point<<endl;
+	long long D=accur(nowx,nowy,point);
+	
+	int ll=tree[point].l;int rr=tree[point].r;
+	//cout<<ll<<" "<<rr<<endl;
+	long long dl,dr;
+	if(ll)dl=circu(ll,nowx,nowy);
+	else dl=0;
+	if(rr)dr=circu(rr,nowx,nowy);
+	else dr=0;
+//	cout<<" "<<D<<" "<<dl<<" "<<dr<<endl;
+	if(D>-q.top()){q.pop();q.push(-D);}
+	if(dl>dr)
+	{
+		if(dl>-q.top())ask(ll);
+		if(dr>-q.top())ask(rr);
+	}
+	else
+	{
+		if(dr>-q.top())ask(rr);
+		if(dl>-q.top())ask(ll);
+	}
+}
+int main()
+{
+	cin>>n>>k;
+//	memset(mxx,0,sizeof(mxx));
+//	memset(mnx,0x3f,sizeof(mnx));
+//	memset(mxy,0,sizeof(mxy));
+//	memset(mny,0x3f,sizeof(mny));
+	for(int i=1;i<=n;i++)cin>>t[i].x>>t[i].y;
+	//cout<<endl;
+	for(int i=1;i<=k*2;i++)q.push(0);
+	int root;
+	root=build(1,n,0);
+	for(int i=1;i<=n;i++)
+	{
+		nowx=t[i].x;
+		nowy=t[i].y;
+		ask(root);
+	}
+	cout<<-q.top()<<endl;
+}
+//min max定初始值 
