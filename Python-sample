@@ -1,0 +1,34 @@
+class AgentGraph:
+
+    def __init__(self, user_id = 'user1'):
+        self.user_id = user_id
+
+        # Initialize agents
+        chat_agent = ChatAgent(user_id)
+        strategist_agent = StrategistAgent(user_id)
+        voice_agent = VoiceAgent(user_id)
+        analyst_agent = AnalystAgent(user_id)
+
+        # Create workflow graph
+        workflow = StateGraph(State)
+
+        # Add nodes
+        workflow.add_node("chat", chat_agent)
+        workflow.add_node("strategist", strategist_agent)
+        workflow.add_node("voice", voice_agent)
+        workflow.add_node("analyst", analyst_agent)
+
+        # define when to continue the chat, or move on to the strategist agent
+        def should_continue_chat(state: State) -> str:
+            if state.get("customer_info"):
+                return "strategist"
+            elif not isinstance(state.get("messages")[-1], HumanMessage):
+                return END
+            return "chat"
+
+        # Add edges
+        workflow.add_conditional_edges("chat", should_continue_chat, ["chat", "strategist", END])
+        workflow.add_conditional_edges("strategist", should_make_calls, ["voice"])
+        workflow.add_conditional_edges("voice", should_analyze, ["analyst"])
+        workflow.add_edge("analyst", END)
+
